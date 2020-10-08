@@ -55,6 +55,23 @@ class Jco_Userecho2bbpress_Admin {
 	}
 
 	/**
+	 * Register the options menu.
+	 *
+	 * @since    1.0.0
+	 */
+	public function add_plugin_menu() {
+		add_management_page( 'UserEcho 2 bbPress', 'UserEcho 2 bbPress', 'manage_options', 'jco_userecho2bbpress', array($this, 'display_plugin_menu') );
+	}
+
+	/**
+	* Add the admin menu displayed
+	*
+	* @since		1.0.0
+	*/
+	public function display_plugin_menu() {
+		include plugin_dir_path( __FILE__ ) . 'partials/jco-userecho2bbpress-admin-display.php';
+	}
+	/**
 	 * Register the stylesheets for the admin area.
 	 *
 	 * @since    1.0.0
