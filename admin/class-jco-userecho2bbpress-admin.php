@@ -117,4 +117,31 @@ class Jco_Userecho2bbpress_Admin {
 
 	}
 
+	/**
+	* Check if UserEcho data files exist
+	* @return 	bool
+	*
+	* @since 1.0.0
+	*/
+	public function data_files_exist() {
+		return ( file_exists( plugin_dir_path( __DIR__ ) . 'data/comments.json' ) && file_exists( plugin_dir_path( __DIR__ ) . 'data/forums.json' ) && file_exists( plugin_dir_path( __DIR__ ) . 'data/topics.json' ) && file_exists( plugin_dir_path( __DIR__ ) . 'data/users.json' ) );
+	}
+
+	public function display_forum_data() {
+		if ( $this->data_files_exist() ) {
+			$forum = new Jco_Userecho2bbpress_Forum( plugin_dir_path( __DIR__ ) . 'data/forums.json' );
+		} else {
+			return '<span class="alert">Could not find UserEcho Files.</span>';
+		}
+		$display = '<table><tr><th>ID</th><th>Name</th><th>Topics</th><tr>';
+		$public_forums = $forum->get_public_forums();
+		foreach ( $public_forums as $id=>$name ) {
+			$display .= '<tr><td>' . $id . '</td><td>' . $name . '</td><td>' . $forum->get_forum_topic_count( $id ) . '</td></tr>';
+		}
+
+		$display .= '</table>';
+		//return $forum->get_forum();
+		return $display;
+	}
+
 }
