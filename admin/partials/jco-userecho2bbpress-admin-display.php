@@ -22,7 +22,7 @@
     <li>forums.json</li>
     <li>users.json</li>
   </ul></p>
-<?php } elseif (! isset($_POST['jco']) ) { ?>
+<?php } elseif (! isset( $_GET['jco'] ) ) { ?>
       <h2>Public Forums</h2>
     <?php
      echo Jco_Userecho2bbpress_Admin::display_forum_data();
@@ -30,4 +30,9 @@
      <h2>Step 1: Select Forum</h2>
      <?php
      echo Jco_Userecho2bbpress_Admin::display_forum_selector_form();
-  } ?>
+  } elseif ( $_GET['jco']['step'] == 2 ){ ?>
+    <h2>Step 2: Map Categories to Topics</h2>
+
+  <?php
+  var_dump($_GET);
+  }?>

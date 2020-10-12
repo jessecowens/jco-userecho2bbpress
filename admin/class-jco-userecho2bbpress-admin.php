@@ -173,11 +173,27 @@ class Jco_Userecho2bbpress_Admin {
 		foreach ( $public_forums as $id=>$name ) {
 			$display .= '<option value="' . $id .'">' . $id . ' - ' . $name . '</option>';
 		}
+
 		$display .= '</select>';
 		$display .= '<input type="submit" name="submit_forum_selection" id="submit_forum_selection" class="button button-primary" value="Submit">';
 		$display .= '</form>';
 
 		return $display;
+	}
+
+	public function handle_forum_selector(){
+		if ( isset( $_POST['jco_select_forum_nonce'] ) && wp_verify_nonce( $_POST['jco_select_forum_nonce'], 'jco_select_forum_nonce') ){
+			$forum_id = sanitize_text_field( $_POST['jco']['forum_id'] );
+			wp_safe_redirect( esc_url_raw( add_query_arg( array(
+				'jco' => array(
+					'forum_id' => $forum_id,
+					'step' => 2,
+				),
+			), admin_url('admin.php?page=' . $this->plugin_name )
+		)));
+		} else {
+			wp_die( 'Invalid Nonce' );
+		}
 	}
 
 }
