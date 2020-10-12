@@ -27,7 +27,7 @@
     <?php
      echo Jco_Userecho2bbpress_Admin::display_forum_data();
      ?>
-     <h2>Select Forum:</h2>
+     <h2>Step 1: Select Forum</h2>
      <?php
      echo Jco_Userecho2bbpress_Admin::display_forum_selector_form();
   } ?>
