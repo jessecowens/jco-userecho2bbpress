@@ -40,6 +40,8 @@ class Jco_Userecho2bbpress_Admin {
 	 */
 	private $version;
 
+	private $forum;
+
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -51,7 +53,16 @@ class Jco_Userecho2bbpress_Admin {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
+		$this->create_forum();
 
+	}
+
+	private function create_forum() {
+		if ( $this->data_files_exist() ) {
+			$this->forum = new Jco_Userecho2bbpress_Forum( plugin_dir_path( __DIR__ ) . 'data/' );
+		} else {
+			$this->forum = null;
+		}
 	}
 
 	/**
@@ -60,7 +71,7 @@ class Jco_Userecho2bbpress_Admin {
 	 * @since    1.0.0
 	 */
 	public function add_plugin_menu() {
-		add_management_page( 'UserEcho 2 bbPress', 'UserEcho 2 bbPress', 'manage_options', 'jco_userecho2bbpress', array($this, 'display_plugin_menu') );
+		add_management_page( 'UserEcho 2 bbPress', 'UserEcho 2 bbPress', 'manage_options', $this->plugin_name, array($this, 'display_plugin_menu') );
 	}
 
 	/**
@@ -127,20 +138,45 @@ class Jco_Userecho2bbpress_Admin {
 		return ( file_exists( plugin_dir_path( __DIR__ ) . 'data/comments.json' ) && file_exists( plugin_dir_path( __DIR__ ) . 'data/forums.json' ) && file_exists( plugin_dir_path( __DIR__ ) . 'data/topics.json' ) && file_exists( plugin_dir_path( __DIR__ ) . 'data/users.json' ) );
 	}
 
+	/**
+	* Display information about the forums in the data export
+	*
+	* @return string $display A snippet of HTML to display information about the Forums
+	*/
 	public function display_forum_data() {
-		if ( $this->data_files_exist() ) {
-			$forum = new Jco_Userecho2bbpress_Forum( plugin_dir_path( __DIR__ ) . 'data/forums.json' );
-		} else {
+		if ( is_null($this->forum) ) {
 			return '<span class="alert">Could not find UserEcho Files.</span>';
 		}
 		$display = '<table><tr><th>ID</th><th>Name</th><th>Topics</th><tr>';
-		$public_forums = $forum->get_public_forums();
+		$public_forums = $this->forum->get_public_forums();
 		foreach ( $public_forums as $id=>$name ) {
-			$display .= '<tr><td>' . $id . '</td><td>' . $name . '</td><td>' . $forum->get_forum_topic_count( $id ) . '</td></tr>';
+			$display .= '<tr><td>' . $id . '</td><td>' . $name . '</td><td>' . $this->forum->get_forum_topic_count( $id ) . '</td></tr>';
 		}
 
 		$display .= '</table>';
-		//return $forum->get_forum();
+		return $display;
+	}
+
+	public function display_forum_selector_form() {
+		if ( is_null($this->forum) ) {
+			return '<span class="alert">Could not find UserEcho Files.</span>';
+		}
+		$public_forums = $this->forum->get_public_forums();
+		$auth_nonce = wp_create_nonce( 'jco_select_forum_nonce');
+
+		$display = '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" id="jco_userecho2bbpress_forum_selector">';
+		$display .= '<input type="hidden" name="action" value="jco_forum_selection" />';
+		$display .= '<input type="hidden" name="jco_select_forum_nonce" value="' . $auth_nonce .'" />';
+		$display .= '<select required id="jco_forum_id" name="jco[forum_id]">';
+		$display .= '<option value="">Select a forum ID to work with</option>';
+
+		foreach ( $public_forums as $id=>$name ) {
+			$display .= '<option value="' . $id .'">' . $id . ' - ' . $name . '</option>';
+		}
+		$display .= '</select>';
+		$display .= '<input type="submit" name="submit_forum_selection" id="submit_forum_selection" class="button button-primary" value="Submit">';
+		$display .= '</form>';
+
 		return $display;
 	}
 

@@ -22,9 +22,12 @@
     <li>forums.json</li>
     <li>users.json</li>
   </ul></p>
-<?php } else { ?>
-    <h2>Public Forums</h2>
+<?php } elseif (! isset($_POST['submit_forum_selection']) ) { ?>
+      <h2>Public Forums</h2>
     <?php
      echo Jco_Userecho2bbpress_Admin::display_forum_data();
-     //var_dump($var);
+     ?>
+     <h2>Select Forum:</h2>
+     <?php
+     echo Jco_Userecho2bbpress_Admin::display_forum_selector_form();
   } ?>

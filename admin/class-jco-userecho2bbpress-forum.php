@@ -26,7 +26,10 @@ class Jco_Userecho2bbpress_Forum{
    * @access   private
    * @var      array    $forum    An array of all forums in the import.
   */
-  private $forum;
+  private $forums;
+  private $topics;
+  private $comments;
+  private $users;
 
   /**
    * Initialize the class and decode the import file
@@ -34,8 +37,11 @@ class Jco_Userecho2bbpress_Forum{
    * @since    1.0.0
    * @param    string    $json_file      Path to the forums.json file
    */
-  public function __construct( $json_file ) {
-    $this->forum = json_decode( file_get_contents( $json_file ), true );
+  public function __construct( $json_path ) {
+    $this->forums   = json_decode( file_get_contents( trailingslashit($json_path) . 'forums.json' ),    true );
+    $this->topics   = json_decode( file_get_contents( trailingslashit($json_path) . 'topics.json' ),    true );
+    $this->comments = json_decode( file_get_contents( trailingslashit($json_path) . 'comments.json' ),  true );
+    $this->users    = json_decode( file_get_contents( trailingslashit($json_path) . 'users.json' ),     true );
   }
 
   /**
@@ -45,7 +51,7 @@ class Jco_Userecho2bbpress_Forum{
   * @return   array  An array of forums from the import
   */
   public function get_forum() {
-    return $this->forum;
+    return $this->forums;
   }
 
 
@@ -57,7 +63,7 @@ class Jco_Userecho2bbpress_Forum{
   */
   public function get_public_forums() {
     $public_forums = array();
-    foreach ( $this->forum as $forum ) {
+    foreach ( $this->forums as $forum ) {
       if ( $forum['type']['name'] == 'PUBLIC' ) {
         $public_forums[$forum['id']] = $forum['name'];
       }
@@ -73,8 +79,20 @@ class Jco_Userecho2bbpress_Forum{
   * @return   int   Number of Topics in forum $id
   */
   public function get_forum_topic_count( $id ) {
-    $key = array_search( $id, array_column($this->forum, 'id') );
-    return $this->forum[$key]['topic_count'];
+    $key = array_search( $id, array_column($this->forums, 'id') );
+    return $this->forums[$key]['topic_count'];
+  }
+
+  public function get_forum_categories( $id ) {
+    $forum_categories = array();
+    foreach ( $this->forums['categories'] as $category ) {
+      $forum_categories[] = array(
+        array(
+          'id' => $category['id'],
+          'name' => $category['name'],
+        ),
+      );
+    }
   }
 
 }
