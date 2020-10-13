@@ -2,6 +2,6 @@
  * All of the CSS for your admin-specific functionality should be
  * included in this file.
  */
- table, th, td {
+ .jco-ue2bb table, .jco-ue2bb th, .jco-ue2bb td {
    border: 1px solid black;
  }
