@@ -85,14 +85,15 @@ class Jco_Userecho2bbpress_Forum{
 
   public function get_forum_categories( $id ) {
     $forum_categories = array();
-    foreach ( $this->forums['categories'] as $category ) {
+    $key = array_search( $id, array_column( $this->forums, 'id' ) );
+    foreach ( $this->forums[$key]['categories'] as $category ) {
       $forum_categories[] = array(
-        array(
           'id' => $category['id'],
           'name' => $category['name'],
-        ),
-      );
+          'topic_count' => $category['topic_count'],
+        );
     }
+    return $forum_categories;
   }
 
 }

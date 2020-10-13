@@ -157,6 +157,12 @@ class Jco_Userecho2bbpress_Admin {
 		return $display;
 	}
 
+
+	/**
+	* Display the forum selector format
+	*
+	* @return string $display An HTML Form containing the dropdown list of Forums
+	*/
 	public function display_forum_selector_form() {
 		if ( is_null($this->forum) ) {
 			return '<span class="alert">Could not find UserEcho Files.</span>';
@@ -181,6 +187,31 @@ class Jco_Userecho2bbpress_Admin {
 		return $display;
 	}
 
+	public function display_topic_mapping_form( $id ) {
+		if ( is_null($this->forum) ) {
+			return '<span class="alert">Could not find UserEcho Files.</span>';
+		}
+
+		$auth_nonce = wp_create_nonce( 'jco_topic_mapping_nonce');
+
+		$display = '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" id="jco_userecho2bbpress_topic_mapping">';
+		$display .= '<input type="hidden" name="action" value="jco_topic_mapping" />';
+		$display .= '<input type="hidden" name="jco_topic_mapping_nonce" value="' . $auth_nonce .'" />';
+		$display .= '<table><tr><th>ID</th><th>Name</th><th>Topics</th><th>Import into</th></tr>';
+		foreach ( $this->forum->get_forum_categories( $id ) as $category ) {
+			$display .= '<tr><td>' . $category['id'] . '</td><td>' . $category['name'] . '</td><td>' . $category['topic_count'] . '</td><td><select><option>Placeholder</option></select></td></tr>';
+		}
+		$display .= '</table>';
+
+		$display .= '</form>';
+		//return $this->forum->get_forum_categories($id);
+		return $display;
+	}
+
+	/**
+	* Handle the forum selection submission and redirect to admin page
+	*
+	*/
 	public function handle_forum_selector(){
 		if ( isset( $_POST['jco_select_forum_nonce'] ) && wp_verify_nonce( $_POST['jco_select_forum_nonce'], 'jco_select_forum_nonce') ){
 			$forum_id = sanitize_text_field( $_POST['jco']['forum_id'] );
@@ -191,6 +222,7 @@ class Jco_Userecho2bbpress_Admin {
 				),
 			), admin_url('admin.php?page=' . $this->plugin_name )
 		)));
+		exit;
 		} else {
 			wp_die( 'Invalid Nonce' );
 		}
