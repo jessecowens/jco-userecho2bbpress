@@ -76,6 +76,7 @@ class Jco_Userecho2bbpress_Forum{
   * Find out how many topics are in a given forum.
   *
   * @since    1.0.0
+  * @param    mixed Integer or String of Topic ID
   * @return   int   Number of Topics in forum $id
   */
   public function get_forum_topic_count( $id ) {
@@ -83,6 +84,13 @@ class Jco_Userecho2bbpress_Forum{
     return $this->forums[$key]['topic_count'];
   }
 
+  /**
+  * Retrieve category ID's, names, and their topic counts
+  *
+  * @since    1.0.0
+  * @param    mixed Integer or String of Topic ID
+  * @return   array   Keyvalue array of id, name, and topic_count
+  */
   public function get_forum_categories( $id ) {
     $forum_categories = array();
     $key = array_search( $id, array_column( $this->forums, 'id' ) );
@@ -96,4 +104,21 @@ class Jco_Userecho2bbpress_Forum{
     return $forum_categories;
   }
 
+  /**
+  * Find out how many topics in a given forum do not have a category assigned.
+  *
+  * @since    1.0.0
+  * @param    mixed Integer or String of Topic ID
+  * @return   int   Number of Topics in forum $id
+  */
+  public function count_uncategorized_topics ( $forum_id ){
+    $uncategorized_topics = 0;
+    $forum_topics = array_keys( array_column( $this->topics, 'forum_id' ), $forum_id );
+    foreach ( $forum_topics as $topic ) {
+      if ( $this->topics[$topic]['category_id'] == '' ) {
+        $uncategorized_topics++;
+      }
+    }
+    return $uncategorized_topics;
+  }
 }

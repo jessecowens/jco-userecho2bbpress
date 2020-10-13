@@ -181,7 +181,7 @@ class Jco_Userecho2bbpress_Admin {
 		}
 
 		$display .= '</select>';
-		$display .= '<input type="submit" name="submit_forum_selection" id="submit_forum_selection" class="button button-primary" value="Submit">';
+		$display .= '<input type="submit" name="submit_forum_selection" id="submit_forum_selection" class="button button-primary" value="Submit" />';
 		$display .= '</form>';
 
 		return $display;
@@ -199,10 +199,11 @@ class Jco_Userecho2bbpress_Admin {
 		$display .= '<input type="hidden" name="jco_topic_mapping_nonce" value="' . $auth_nonce .'" />';
 		$display .= '<table><tr><th>ID</th><th>Name</th><th>Topics</th><th>Import into</th></tr>';
 		foreach ( $this->forum->get_forum_categories( $id ) as $category ) {
-			$display .= '<tr><td>' . $category['id'] . '</td><td>' . $category['name'] . '</td><td>' . $category['topic_count'] . '</td><td><select><option>Placeholder</option></select></td></tr>';
+			$display .= '<tr><td>' . $category['id'] . '</td><td>' . $category['name'] . '</td><td>' . $category['topic_count'] . '</td><td>' . $this->bbpress_forum_picker( $category['id'] ) . '</td></tr>';
 		}
+		$display .= '<tr><td>N/A</td><td>Uncategorized</td><td>' . $this->forum->count_uncategorized_topics( $id ) . '</td><td>' . $this->bbpress_forum_picker() . '</td></tr>';
 		$display .= '</table>';
-
+		$display .= '<input type="submit" name="submit_topic_mapping" id="submit_topic_mapping" class="button button-primary" value="Submit" />';
 		$display .= '</form>';
 		//return $this->forum->get_forum_categories($id);
 		return $display;
@@ -226,6 +227,17 @@ class Jco_Userecho2bbpress_Admin {
 		} else {
 			wp_die( 'Invalid Nonce' );
 		}
+	}
+
+	public function bbpress_forum_picker( $from_id = 0 ) {
+		$bbforums = get_posts( array( 'numberposts' => -1, 'post_type' => 'forum'));
+		$picker = '<select required class="jco-bbpicker" name="jco[' . $from_id . ']"><option value="">Select One</option>';
+		foreach ( $bbforums as $bbforum ) {
+			$picker .= '<option value="' . $bbforum->ID . '">' . $bbforum->post_title . '</option>';
+		}
+		$picker .= '</select>';
+
+		return $picker;
 	}
 
 }

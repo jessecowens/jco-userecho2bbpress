@@ -12,7 +12,7 @@
  * @subpackage Jco_Userecho2bbpress/admin/partials
  */
 ?>
-
+<div class="jco-ue2bb">
 <h1>Convert UserEcho to bbPress</h1>
 <?php if ( ! Jco_Userecho2bbpress_Admin::data_files_exist() ) { ?>
   <p> Add your UserEcho forums export files in JSON format to the data directory. There should be four files:
@@ -31,8 +31,9 @@
      <?php
      echo Jco_Userecho2bbpress_Admin::display_forum_selector_form();
   } elseif ( $_GET['jco']['step'] == 2 ){ ?>
-    <h2>Step 2: Map Categories to Topics</h2>
+    <h2>Step 2: Map Categories to Forums</h2>
   <?php
     echo Jco_Userecho2bbpress_Admin::display_topic_mapping_form($_GET['jco']['forum_id']);
     //var_dump($var);
   }?>
+</div>
