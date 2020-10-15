@@ -35,5 +35,10 @@
   <?php
     echo Jco_Userecho2bbpress_Admin::display_topic_mapping_form($_GET['jco']['forum_id']);
     //var_dump($var);
-  }?>
+  } elseif ( $_GET['jco']['step'] == 3 ) { ?>
+    <h3>Step 3: Preview</h3>
+  <?php
+    var_dump( $_GET );
+  }
+  ?>
 </div>

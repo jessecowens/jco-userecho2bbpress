@@ -152,6 +152,7 @@ class Jco_Userecho2bbpress {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_plugin_menu' );
 		$this->loader->add_action( 'admin_post_jco_forum_selection', $plugin_admin, 'handle_forum_selector' );
+		$this->loader->add_action( 'admin_post_jco_topic_mapping', $plugin_admin, 'handle_topic_mapping' );
 
 	}
 

@@ -42,6 +42,7 @@ class Jco_Userecho2bbpress_Admin {
 
 	private $forum;
 
+
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -54,7 +55,6 @@ class Jco_Userecho2bbpress_Admin {
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
 		$this->create_forum();
-
 	}
 
 	private function create_forum() {
@@ -197,6 +197,7 @@ class Jco_Userecho2bbpress_Admin {
 		$display = '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" id="jco_userecho2bbpress_topic_mapping">';
 		$display .= '<input type="hidden" name="action" value="jco_topic_mapping" />';
 		$display .= '<input type="hidden" name="jco_topic_mapping_nonce" value="' . $auth_nonce .'" />';
+		$display .= '<input type="hidden" name="jco[forum_id]" value="' . $id . '" />"';
 		$display .= '<table><tr><th>ID</th><th>Name</th><th>Topics</th><th>Import into</th></tr>';
 		foreach ( $this->forum->get_forum_categories( $id ) as $category ) {
 			$display .= '<tr><td>' . $category['id'] . '</td><td>' . $category['name'] . '</td><td>' . $category['topic_count'] . '</td><td>' . $this->bbpress_forum_picker( $category['id'] ) . '</td></tr>';
@@ -224,6 +225,27 @@ class Jco_Userecho2bbpress_Admin {
 			), admin_url('admin.php?page=' . $this->plugin_name )
 		)));
 		exit;
+		} else {
+			wp_die( 'Invalid Nonce' );
+		}
+	}
+
+	public function handle_topic_mapping(){
+		if ( isset( $_POST['jco_topic_mapping_nonce'] ) && wp_verify_nonce( $_POST['jco_topic_mapping_nonce'], 'jco_topic_mapping_nonce' ) ) {
+			$category_map = array();
+			foreach ( $_POST['jco'] as $from_id => $to_id ){
+				$category_map[sanitize_text_field($from_id)] = sanitize_text_field($to_id);
+			}
+			$forum_id = sanitize_text_field( $_POST['jco']['forum_id'] );
+
+			wp_safe_redirect( esc_url_raw( add_query_arg( array(
+				'jco' => array(
+					'forum_id' => $forum_id,
+					'step' => 3,
+					'category_map' => $category_map,
+				),
+			), admin_url( 'admin.php?page=' . $this->plugin_name )
+		)));
 		} else {
 			wp_die( 'Invalid Nonce' );
 		}
