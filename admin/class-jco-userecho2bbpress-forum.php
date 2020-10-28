@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The admin-specific functionality of the plugin.
+ * The UserEcho forums data model
  *
  * @link       boldgrid.com
  * @since      1.0.0
@@ -120,5 +120,124 @@ class Jco_Userecho2bbpress_Forum{
       }
     }
     return $uncategorized_topics;
+  }
+
+  public function get_topic_category( $id ) {
+    $key = array_search( $id, array_column( $this->topics, 'id' ) );
+    if ( isset( $this->topics[$key]['category_id'] ) ) {
+      return $this->topics[$key]['category_id'];
+    } else {
+      return 0;
+    }
+  }
+
+  public function get_topic_content( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    return $this->topics[$key]['description'];
+  }
+
+  public function get_reply_content( $reply_id ) {
+    $key = array_search( $reply_id, array_column( $this->comments, 'id' ) );
+    return $this->comments[$key]['comment'];
+  }
+
+  public function get_topic_title( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    return $this->topics[$key]['header'];
+  }
+
+  public function get_topic_date( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    return $this->topics[$key]['created'];
+  }
+
+  public function get_reply_date( $reply_id ) {
+    $key = array_search( $reply_id, array_column( $this->comments, 'id' ) );
+    return $this->comments[$key]['created'];
+  }
+
+  public function get_topic_reply_count( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    return $this->topics[$key]['comment_count'];
+  }
+
+  public function get_topic_slug( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    $slug = array();
+    preg_match( '/[^\/]+$/', $this->topics[$key]['relative_url'], $slug );
+
+    return $slug[0];
+  }
+
+  public function get_preview_topic( $forum_id ) {
+    $key = array_search( $forum_id, array_column( $this->topics, 'forum_id' ) );
+    return $this->topics[$key]['id'];
+  }
+
+  public function get_topic_author_name( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    $author_name = $this->get_user_name( $this->topics[$key]['author_id'] );
+    return $author_name;
+  }
+
+  public function get_reply_author_name( $reply_id ) {
+    $key = array_search( $reply_id, array_column( $this->comments, 'id' ) );
+    $author_name = $this->get_user_name( $this->comments[$key]['author_id'] );
+    return $author_name;
+  }
+
+  public function get_user_name( $user_id ) {
+    $key = array_search( $user_id, array_column( $this->users, 'id' ) );
+    return $this->users[$key]['name'];
+  }
+
+  public function get_topic_author_email( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) ) ;
+    $author_email = $this->get_user_email( $this->topics[$key]['author_id'] );
+    return $author_email;
+  }
+
+  public function get_reply_author_email( $reply_id ) {
+    $key = array_search( $reply_id, array_column( $this->comments, 'id' ) ) ;
+    $author_email = $this->get_user_email( $this->comments[$key]['author_id'] );
+    return $author_email;
+  }
+
+  public function get_user_email( $user_id ) {
+    $key = array_search( $user_id, array_column( $this->users, 'id' ) );
+    return $this->users[$key]['email'];
+  }
+
+  public function get_topic_author_website( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    $author_website = $this->get_user_website( $this->topics[$key]['author_id'] );
+    return $author_website;
+  }
+
+  public function get_reply_author_website( $reply_id ) {
+    $key = array_search( $reply_id, array_column( $this->comments, 'id' ) );
+    $author_website = $this->get_user_website( $this->comments[$key]['author_id'] );
+    return $author_website;
+  }
+
+  public function get_user_website( $user_id ) {
+    $key = array_search( $user_id, array_column( $this->users, 'id' ) );
+    return $this->users[$key]['admin_url'];
+  }
+
+  public function get_all_replies( $topic_id ) {
+    $replies = array_keys( array_column( $this->comments, 'topic_id' ), $topic_id );
+    $reply_ids = array();
+
+    foreach ( $replies as $reply ) {
+      $reply_ids[] = $this->comments[$reply]['id'];
+    }
+
+    return $reply_ids;
+  }
+
+  public function get_reply_privacy( $reply_id ) {
+    $key = array_search( $reply_id, array_column( $this->comments, 'id') );
+    return $this->comments[$key]['privacy_mode'];
   }
 }

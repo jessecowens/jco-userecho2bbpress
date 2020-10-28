@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Provide a admin area view for the plugin
+ * Provide view for the plugin
  *
  * This file is used to markup the admin-facing aspects of the plugin.
  *
@@ -38,7 +38,8 @@
   } elseif ( $_GET['jco']['step'] == 3 ) { ?>
     <h3>Step 3: Preview</h3>
   <?php
-    var_dump( $_GET );
+    //var_dump( $_GET );
+    echo Jco_Userecho2bbpress_Admin::display_preview_form($_GET['jco']);
   }
   ?>
 </div>

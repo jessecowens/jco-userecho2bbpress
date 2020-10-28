@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The admin-specific functionality of the plugin.
+ * The controller for the importer.
  *
  * @link       boldgrid.com
  * @since      1.0.0
@@ -197,7 +197,7 @@ class Jco_Userecho2bbpress_Admin {
 		$display = '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" id="jco_userecho2bbpress_topic_mapping">';
 		$display .= '<input type="hidden" name="action" value="jco_topic_mapping" />';
 		$display .= '<input type="hidden" name="jco_topic_mapping_nonce" value="' . $auth_nonce .'" />';
-		$display .= '<input type="hidden" name="jco[forum_id]" value="' . $id . '" />"';
+		$display .= '<input type="hidden" name="jco[forum_id]" value="' . $id . '" />';
 		$display .= '<table><tr><th>ID</th><th>Name</th><th>Topics</th><th>Import into</th></tr>';
 		foreach ( $this->forum->get_forum_categories( $id ) as $category ) {
 			$display .= '<tr><td>' . $category['id'] . '</td><td>' . $category['name'] . '</td><td>' . $category['topic_count'] . '</td><td>' . $this->bbpress_forum_picker( $category['id'] ) . '</td></tr>';
@@ -206,17 +206,40 @@ class Jco_Userecho2bbpress_Admin {
 		$display .= '</table>';
 		$display .= '<input type="submit" name="submit_topic_mapping" id="submit_topic_mapping" class="button button-primary" value="Submit" />';
 		$display .= '</form>';
-		//return $this->forum->get_forum_categories($id);
+		//return $this->forum->get_forum_categories($id); 		//debug info
 		return $display;
 	}
 
 	/**
-	* Handle the forum selection submission and redirect to admin page
+ 	* Display a preview of an imported post
+ 	*
+ 	* @param  array [topic_id, category_map]
+ 	* @return string html to display preview of imported content
+ 	*/
+	public function display_preview_form( $args ) {
+		$forum_id = $args['forum_id'];
+		$ue_topic_id = $this->forum->get_preview_topic( $forum_id );
+		$category_map = $args['category_map'];
+		$topic_id = $this->insert_bbp_topic( $ue_topic_id, $category_map );
+
+		if ( $topic_id ){
+			$permalink = get_permalink( $topic_id );
+			$display .= '<a href="' . $permalink . '">' . $permalink . '</a>';
+			$display .= '<iframe src="/?p=' . $topic_id . '" height="600" width="1200"></iframe>';
+		} else {
+			$display = '<div class="notice notice-error"><p>Topic insertion failed</p></div>';
+		}
+		return $display;
+	}
+
+	/**
+	* Sanitize input and redirect to step 2 of the import process
 	*
 	*/
 	public function handle_forum_selector(){
 		if ( isset( $_POST['jco_select_forum_nonce'] ) && wp_verify_nonce( $_POST['jco_select_forum_nonce'], 'jco_select_forum_nonce') ){
 			$forum_id = sanitize_text_field( $_POST['jco']['forum_id'] );
+
 			wp_safe_redirect( esc_url_raw( add_query_arg( array(
 				'jco' => array(
 					'forum_id' => $forum_id,
@@ -230,13 +253,18 @@ class Jco_Userecho2bbpress_Admin {
 		}
 	}
 
+	/**
+	 * Sanitize input and redirect to step 3 of the import process.
+	 *
+	 */
 	public function handle_topic_mapping(){
 		if ( isset( $_POST['jco_topic_mapping_nonce'] ) && wp_verify_nonce( $_POST['jco_topic_mapping_nonce'], 'jco_topic_mapping_nonce' ) ) {
 			$category_map = array();
-			foreach ( $_POST['jco'] as $from_id => $to_id ){
-				$category_map[sanitize_text_field($from_id)] = sanitize_text_field($to_id);
-			}
 			$forum_id = sanitize_text_field( $_POST['jco']['forum_id'] );
+			unset( $_POST['jco']['forum_id'] );
+			foreach ( $_POST['jco'] as $from_id => $to_id ){
+					$category_map[sanitize_text_field($from_id)] = sanitize_text_field($to_id);
+			}
 
 			wp_safe_redirect( esc_url_raw( add_query_arg( array(
 				'jco' => array(
@@ -262,4 +290,125 @@ class Jco_Userecho2bbpress_Admin {
 		return $picker;
 	}
 
+	public function insert_bbp_topic( $ue_topic_id, $category_map ) {
+		$forum_id = $category_map[$this->forum->get_topic_category( $ue_topic_id )];
+		$post_title = $this->forum->get_topic_title( $ue_topic_id );
+		$post_content = $this->forum->get_topic_content( $ue_topic_id );
+		if ( ! $post_content ) {
+			$post_content = $post_title;
+		}
+
+		$post_content = $this->import_and_replace_media( $post_content );
+		$post_date = $this->forum->get_topic_date( $ue_topic_id );
+		$reply_count = $this->forum->get_topic_reply_count( $ue_topic_id );
+		$post_name = $this->forum->get_topic_slug( $ue_topic_id );
+
+		$topic_data = array(
+			'post_author' => 0,
+			'post_parent' => $forum_id, // forum ID
+			'post_password' => '',
+			'post_name' => $post_name,
+			'post_content' => $post_content,
+			'post_title' => $post_title,
+			'post_date_gmt' => $post_date,
+			'comment_status' => 'closed',
+			'menu_order' => 0,
+		);
+
+		$topic_meta = array(
+			'forum_id' => $forum_id,
+			'voice_count' => 1,
+			'reply_count' => $reply_count,
+			'reply_count_hidden' => 0,
+			'last_reply_id' => 0,
+		);
+
+		$topic_id = bbp_insert_topic( $topic_data, $topic_meta );
+
+		if ( ! $topic_id ) {
+			return false;
+		}
+
+		$this->update_anonymous_topic_user( $ue_topic_id, $topic_id, 'topic' );
+
+		$replies = $this->insert_all_replies( $ue_topic_id, $topic_id );
+
+		return $topic_id;
+	}
+
+	public function insert_all_replies( $ue_topic_id, $bbp_topic_id ){
+		$replies = $this->forum->get_all_replies( $ue_topic_id );
+		$reply_ids = array();
+
+		foreach ( $replies as $reply ) {
+			$reply_ids[] = $this->insert_bbp_reply( $bbp_topic_id, $reply );
+		}
+		return $reply_ids;
+	}
+
+	public function insert_bbp_reply( $bbp_topic_id, $ue_reply_id ) {
+		$reply_privacy = $this->forum->get_reply_privacy( $ue_reply_id );
+		if ( ! $reply_privacy == 'PUBLIC' ) {
+			return false;
+		}
+		$post_content = $this->forum->get_reply_content( $ue_reply_id );
+		if ( ! $post_content ) {
+			return false;
+		}
+		$post_content = $this->import_and_replace_media( $post_content );
+		$post_date = $this->forum->get_reply_date( $ue_reply_id );
+
+		$reply_data = array(
+			'post_author' => 0,
+			'post_parent' => $bbp_topic_id, // forum ID
+			'post_password' => '',
+			'post_content' => $post_content,
+			'post_date_gmt' => $post_date,
+			'comment_status' => 'closed',
+		);
+		$reply_id = bbp_insert_reply( $reply_data );
+
+		if ( ! $reply_id ) {
+			return false;
+		}
+
+		$this->update_anonymous_reply_user( $ue_reply_id, $reply_id, 'reply' );
+
+		return $reply_id;
+	}
+
+	public function update_anonymous_topic_user( $ue_topic_id, $bbp_topic_id, $post_type ) {
+		$anonymous_name = $this->forum->get_topic_author_name( $ue_topic_id );
+		$anonymous_email = $this->forum->get_topic_author_email( $ue_topic_id );
+		$anonymous_website = $this->forum->get_topic_author_website( $ue_topic_id );
+
+		$anonymous_data = array(
+			'bbp_anonymous_name' => $anonymous_name,
+			'bbp_anonymous_email' => $anonymous_email,
+			'bbp_anonymous_website' => $anonymous_website
+		);
+
+		bbp_update_anonymous_post_author( $bbp_topic_id, $anonymous_data, $post_type );
+		return;
+	}
+
+	public function update_anonymous_reply_user( $ue_reply_id, $bbp_topic_id, $post_type ) {
+		$anonymous_name = $this->forum->get_reply_author_name( $ue_reply_id );
+		$anonymous_email = $this->forum->get_reply_author_email( $ue_reply_id );
+		$anonymous_website = $this->forum->get_reply_author_website( $ue_reply_id );
+
+		$anonymous_data = array(
+			'bbp_anonymous_name' => $anonymous_name,
+			'bbp_anonymous_email' => $anonymous_email,
+			'bbp_anonymous_website' => $anonymous_website
+		);
+
+		bbp_update_anonymous_post_author( $bbp_topic_id, $anonymous_data, $post_type );
+		return;
+	}
+
+	public function import_and_replace_media( $content ){
+		// TODO:
+		return $content;
+	}
 }
