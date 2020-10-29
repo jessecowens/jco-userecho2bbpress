@@ -124,7 +124,9 @@ class Jco_Userecho2bbpress_Admin {
 		 * class.
 		 */
 
+		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/jco-userecho2bbpress-admin.js', array( 'jquery' ), $this->version, false );
+		wp_localize_script( $this->plugin_name, 'params', $params );
 
 	}
 
@@ -196,7 +198,7 @@ class Jco_Userecho2bbpress_Admin {
 
 		$display = '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" id="jco_userecho2bbpress_topic_mapping">';
 		$display .= '<input type="hidden" name="action" value="jco_topic_mapping" />';
-		$display .= '<input type="hidden" name="jco_topic_mapping_nonce" value="' . $auth_nonce .'" />';
+		$display .= '<input type="hidden" name="jco_topic_mapping_nonce" value="' . $auth_nonce . '" />';
 		$display .= '<input type="hidden" name="jco[forum_id]" value="' . $id . '" />';
 		$display .= '<table><tr><th>ID</th><th>Name</th><th>Topics</th><th>Import into</th></tr>';
 		foreach ( $this->forum->get_forum_categories( $id ) as $category ) {
@@ -213,7 +215,7 @@ class Jco_Userecho2bbpress_Admin {
 	/**
  	* Display a preview of an imported post
  	*
- 	* @param  array [topic_id, category_map]
+ 	* @param  array [forum_id, category_map]
  	* @return string html to display preview of imported content
  	*/
 	public function display_preview_form( $args ) {
@@ -221,6 +223,17 @@ class Jco_Userecho2bbpress_Admin {
 		$ue_topic_id = $this->forum->get_preview_topic( $forum_id );
 		$category_map = $args['category_map'];
 		$topic_id = $this->insert_bbp_topic( $ue_topic_id, $category_map );
+		$replies = $this->insert_all_replies( $ue_topic_id, $topic_id );
+
+		$auth_nonce = wp_create_nonce( 'jco_preview_nonce' );
+
+		$display = '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" id="jco_userecho2bbpress_preview">';
+		$display .= '<input type="hidden" name="action" value="jco_preview" />';
+		$display .= '<input type="hidden" name="jco_preview_nonce" value="' . $auth_nonce . '" />';
+		$display .= '<input type="hidden" name="jco[forum_id]" value="' . $forum_id . '" />';
+		foreach ( $category_map as $from_id => $to_id ){
+			$display .= '<input type="hidden" name="jco[category_map][' . $from_id . ']" value="' . $to_id . '" />';
+		}
 
 		if ( $topic_id ){
 			$permalink = get_permalink( $topic_id );
@@ -229,6 +242,26 @@ class Jco_Userecho2bbpress_Admin {
 		} else {
 			$display = '<div class="notice notice-error"><p>Topic insertion failed</p></div>';
 		}
+		$display .= '<input type="submit" name="submit_preview_ok" id="submit_preview_ok" class="button button-primary" value="Next step (not importing yet)" />';
+		$display .= '</form>';
+		return $display;
+	}
+
+	public function display_final_submit( $args ) {
+		$forum_id = $args['forum_id'];
+		$category_map = $args['category_map'];
+		$topics = $this->forum->get_all_topics( $forum_id );
+		$numtopics = count( $topics );
+		$iterator = 0;
+		$display = '<form action="' . esc_url( admin_url( 'admin-ajax.php' ) ) . '" method="post" id="jco_userecho2bbpress_final">';
+		$display .= '<input type="hidden" name="action" value="jco_final_submit" />';
+		$display .= '<input type="hidden" name="jco[forum_id]" value="' . $forum_id . '" />';
+		$display .= '<input type="hidden" name="jco[category_map]" value=\'' . json_encode( $category_map ) . '\' />';
+		$display .= '<input type="hidden" name="jco[topics]" value=\''. json_encode( $topics ) . '\' />';
+		$display .= '<input type="hidden" name="jco[numtopics]" value="' . $numtopics . '" />';
+		$display .= '<p>Press submit to begin importing ' . $numtopics . ' topics now.</p>';
+		$display .= '<input type="submit" name="submit_final_ok" id="submit_final_ok" class="button button-primary" value="Begin importing ' . $numtopics . ' topics." />';
+		$display .= '</form>';
 		return $display;
 	}
 
@@ -279,6 +312,28 @@ class Jco_Userecho2bbpress_Admin {
 		}
 	}
 
+	public function handle_preview_form() {
+		if ( isset( $_POST['jco_preview_nonce'] ) && wp_verify_nonce( $_POST['jco_preview_nonce'], 'jco_preview_nonce' ) ) {
+			$category_map = array();
+			$forum_id = sanitize_text_field( $_POST['jco']['forum_id'] );
+			unset( $_POST['jco']['forum_id'] );
+			foreach ( $_POST['jco']['category_map'] as $from_id => $to_id ){
+					$category_map[sanitize_text_field($from_id)] = sanitize_text_field($to_id);
+			}
+
+			wp_safe_redirect( esc_url_raw( add_query_arg( array(
+				'jco' => array(
+					'forum_id' => $forum_id,
+					'step' => 4,
+					'category_map' => $category_map,
+				),
+			), admin_url( 'admin.php?page=' . $this->plugin_name )
+		)));
+		} else {
+		wp_die( 'Invalid Nonce' );
+		}
+	}
+
 	public function bbpress_forum_picker( $from_id = 0 ) {
 		$bbforums = get_posts( array( 'numberposts' => -1, 'post_type' => 'forum'));
 		$picker = '<select required class="jco-bbpicker" name="jco[' . $from_id . ']"><option value="">Select One</option>';
@@ -302,6 +357,8 @@ class Jco_Userecho2bbpress_Admin {
 		$post_date = $this->forum->get_topic_date( $ue_topic_id );
 		$reply_count = $this->forum->get_topic_reply_count( $ue_topic_id );
 		$post_name = $this->forum->get_topic_slug( $ue_topic_id );
+
+		$this->delete_topic_if_exists($post_name);
 
 		$topic_data = array(
 			'post_author' => 0,
@@ -330,8 +387,6 @@ class Jco_Userecho2bbpress_Admin {
 		}
 
 		$this->update_anonymous_topic_user( $ue_topic_id, $topic_id, 'topic' );
-
-		$replies = $this->insert_all_replies( $ue_topic_id, $topic_id );
 
 		return $topic_id;
 	}
@@ -410,5 +465,38 @@ class Jco_Userecho2bbpress_Admin {
 	public function import_and_replace_media( $content ){
 		// TODO:
 		return $content;
+	}
+
+	public function delete_topic_if_exists( $slug ) {
+		$posts = get_posts( array(
+			'name' => $slug,
+			'posts_per_page' => 1,
+			'post_type' => 'topic',
+		));
+
+		if ( ! $posts ) {
+			return;
+		}
+
+		bbp_delete_topic_replies( $posts[0]->ID );
+		wp_delete_post( $posts[0]->ID );
+		return;
+	}
+
+	public function ajax_insert_topic() {
+		$category_map =  json_decode( stripslashes($_POST['category_map']), true);
+		$topic_id = $_POST['topic_id'];
+		$numtopics = $_POST['numtopics'];
+		$this_topic = $_POST['thistopic'];
+		//var_dump( $topic_id );
+		$topic = $this->insert_bbp_topic( $topic_id, $category_map );
+		$replies = $this->insert_all_replies( $topic_id, $topic );
+		foreach ( $replies as $reply ) {
+			$reply_list .= $reply . ', ';
+		}
+		$permalink = get_permalink( $topic );
+		$response = '<p>Inserted Topic ID <a href="' . $permalink . '">' . $topic . '</a> with replies ' . $reply_list . ' (' . $this_topic . ' of ' . $numtopics . ')</p>';
+		echo $response;
+		wp_die();
 	}
 }

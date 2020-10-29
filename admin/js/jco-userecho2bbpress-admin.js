@@ -28,5 +28,38 @@
 	 * Although scripts in the WordPress core, Plugins and Themes may be
 	 * practising this, we should strive to set a better example in our own work.
 	 */
+	 $( document ).ready( function( $ ) {
+		 $( '#jco_userecho2bbpress_final' ).submit( function( event ) {
+			 event.preventDefault();
+
+			 var category_map = JSON.parse( $( '[name="jco[category_map]"]' ).val() );
+			 var topics = JSON.parse( $( '[name="jco[topics]"]' ).val() );
+			 var numtopics = $( '[name="jco[numtopics]"]' ).val();
+			 var i = 0;
+			 //console.log( numtopics );
+			 topics.forEach(insertTopic);
+			 //insertTopic(topics[0]);
+
+			 function insertTopic(topic){
+			 	var postdata = {
+				 	'action': 'jco_insert_topic',
+				 	'category_map': JSON.stringify( category_map ),
+				 	'topic_id': topic,
+					'numtopics': numtopics,
+					'thistopic': i
+			 	};
+
+			 	$.post(
+				 	params.ajaxurl,
+				 	postdata,
+				 	function( response ) {
+					 $('#ajax-status').prepend( response );
+				 });
+				 i++;
+			 }
+
+
+	});
+});
 
 })( jQuery );

@@ -153,6 +153,8 @@ class Jco_Userecho2bbpress {
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_plugin_menu' );
 		$this->loader->add_action( 'admin_post_jco_forum_selection', $plugin_admin, 'handle_forum_selector' );
 		$this->loader->add_action( 'admin_post_jco_topic_mapping', $plugin_admin, 'handle_topic_mapping' );
+		$this->loader->add_action( 'admin_post_jco_preview', $plugin_admin, 'handle_preview_form' );
+		$this->loader->add_action( 'wp_ajax_jco_insert_topic', $plugin_admin, 'ajax_insert_topic' );
 
 	}
 

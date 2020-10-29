@@ -40,6 +40,12 @@
   <?php
     //var_dump( $_GET );
     echo Jco_Userecho2bbpress_Admin::display_preview_form($_GET['jco']);
-  }
+  } elseif ( $_GET['jco']['step'] == 4 ) { ?>
+    <h3>Step 4: Away we go!</h3>
+  <?php
+    echo Jco_Userecho2bbpress_Admin::display_final_submit($_GET['jco']);
   ?>
+  <div id="ajax-status">
+  </div>
+<?php } ?>
 </div>

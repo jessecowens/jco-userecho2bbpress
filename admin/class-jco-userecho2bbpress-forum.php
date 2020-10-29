@@ -240,4 +240,15 @@ class Jco_Userecho2bbpress_Forum{
     $key = array_search( $reply_id, array_column( $this->comments, 'id') );
     return $this->comments[$key]['privacy_mode'];
   }
+
+  public function get_all_topics( $forum_id ) {
+    $topics = array_keys( array_column( $this->topics, 'forum_id'), $forum_id );
+    $topic_ids = array();
+
+    foreach ( $topics as $topic ) {
+        $topic_ids[] = $this->topics[$topic]['id'];
+    }
+
+    return $topic_ids;
+  }
 }
