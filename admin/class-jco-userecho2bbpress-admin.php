@@ -353,7 +353,7 @@ class Jco_Userecho2bbpress_Admin {
 			$post_content = $post_title;
 		}
 
-		$post_content = $this->import_and_replace_media( $post_content );
+		$post_content = $this->import_and_replace_media( $post_content, $ue_topic_id );
 		$post_date = $this->forum->get_topic_date( $ue_topic_id );
 		$reply_count = $this->forum->get_topic_reply_count( $ue_topic_id );
 		$post_name = $this->forum->get_topic_slug( $ue_topic_id );
@@ -396,12 +396,12 @@ class Jco_Userecho2bbpress_Admin {
 		$reply_ids = array();
 
 		foreach ( $replies as $reply ) {
-			$reply_ids[] = $this->insert_bbp_reply( $bbp_topic_id, $reply );
+			$reply_ids[] = $this->insert_bbp_reply( $bbp_topic_id, $reply, $ue_topic_id );
 		}
 		return $reply_ids;
 	}
 
-	public function insert_bbp_reply( $bbp_topic_id, $ue_reply_id ) {
+	public function insert_bbp_reply( $bbp_topic_id, $ue_reply_id, $ue_topic_id ) {
 		$reply_privacy = $this->forum->get_reply_privacy( $ue_reply_id );
 		if ( ! $reply_privacy == 'PUBLIC' ) {
 			return false;
@@ -410,7 +410,7 @@ class Jco_Userecho2bbpress_Admin {
 		if ( ! $post_content ) {
 			return false;
 		}
-		$post_content = $this->import_and_replace_media( $post_content );
+		$post_content = $this->import_and_replace_media( $post_content, $ue_topic_id );
 		$post_date = $this->forum->get_reply_date( $ue_reply_id );
 
 		$reply_data = array(
@@ -462,8 +462,42 @@ class Jco_Userecho2bbpress_Admin {
 		return;
 	}
 
-	public function import_and_replace_media( $content ){
-		// TODO:
+	public function import_and_replace_media( $content, $ue_topic_id ){
+		$timeout = 5;
+		$doc = new DOMDocument;
+		$doc->loadHTML($content);
+		$baseurl = $this->forum->get_base_url( $ue_topic_id );
+
+		$images = $doc->getElementsByTagName('img');
+
+		foreach ( $images as $image ) {
+			$url = trailingslashit( $baseurl ) . $image->getAttribute('src');
+			$temp_file = download_url( $url, $timeout );
+
+			if ( ! is_wp_error( $temp_file ) ) {
+				$file = array(
+					'name' => basename($url),
+					'type' => mime_content_type( $temp_file ),
+					'tmp_name' => $temp_file,
+					'error' => 0,
+					'size' => filesize( $temp_file ),
+				);
+
+				$overrides = array(
+					'test_form' => false,
+					'test_size' => true,
+					'test_upload' => true,
+				);
+
+				$result = wp_handle_sideload( $file, $overrides );
+				var_dump($result);
+				if ( empty( $results['error'] ) ) {
+					$image->setAttribute( 'src', $result['url'] );
+				}
+			}
+			sleep( 2 );
+		}
+		$content = $doc->saveHTML();
 		return $content;
 	}
 

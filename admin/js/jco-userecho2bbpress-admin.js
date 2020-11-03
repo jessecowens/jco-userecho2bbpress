@@ -35,7 +35,7 @@
 			 var category_map = JSON.parse( $( '[name="jco[category_map]"]' ).val() );
 			 var topics = JSON.parse( $( '[name="jco[topics]"]' ).val() );
 			 var numtopics = $( '[name="jco[numtopics]"]' ).val();
-			 var i = 0;
+			 var i = 1;
 			 //console.log( numtopics );
 			 topics.forEach(insertTopic);
 			 //insertTopic(topics[0]);

@@ -35,7 +35,7 @@ class Jco_Userecho2bbpress_Forum{
    * Initialize the class and decode the import file
    *
    * @since    1.0.0
-   * @param    string    $json_file      Path to the forums.json file
+   * @param    string    $json_path      Path to the forums.json file
    */
   public function __construct( $json_path ) {
     $this->forums   = json_decode( file_get_contents( trailingslashit($json_path) . 'forums.json' ),    true );
@@ -171,7 +171,8 @@ class Jco_Userecho2bbpress_Forum{
 
   public function get_preview_topic( $forum_id ) {
     $key = array_search( $forum_id, array_column( $this->topics, 'forum_id' ) );
-    return $this->topics[$key]['id'];
+    //return $this->topics[$key]['id'];
+    return '1216';
   }
 
   public function get_topic_author_name( $topic_id ) {
@@ -250,5 +251,14 @@ class Jco_Userecho2bbpress_Forum{
     }
 
     return $topic_ids;
+  }
+
+  public function get_base_url( $topic_id ) {
+    $key = array_search( $topic_id, array_column( $this->topics, 'id' ) );
+    $full_url = $this->topics[$key]['url'];
+    $relative_url = $this->topics[$key]['relative_url'];
+    $base_url = str_replace( $relative_url, '', $full_url );
+
+    return $base_url;
   }
 }
