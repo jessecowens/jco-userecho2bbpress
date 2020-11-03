@@ -490,11 +490,11 @@ class Jco_Userecho2bbpress_Admin {
 				);
 
 				$result = wp_handle_sideload( $file, $overrides );
-				echo "Successfully imported image " . $result['url'];
+				echo '<p><strong>Successfully imported image </strong><a href="' . $result['url'] . '">' . $result['url'] . '</a></p>';
 				if ( empty( $results['error'] ) ) {
 					$image->setAttribute( 'src', $result['url'] );
 				} else {
-					echo "<strong>Error importing image </strong>" . $result['error'];
+					echo "<p><strong>Error importing image </strong>" . $result['error'] . "</p>";
 				}
 			} else {
 				echo "<strong>Error downloading image </strong>" . $temp_file->get_error_message();
