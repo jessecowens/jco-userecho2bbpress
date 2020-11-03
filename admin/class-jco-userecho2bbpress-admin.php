@@ -490,7 +490,7 @@ class Jco_Userecho2bbpress_Admin {
 				);
 
 				$result = wp_handle_sideload( $file, $overrides );
-				echo "Successfully imported image " . $file['url'];
+				echo "Successfully imported image " . $result['url'];
 				if ( empty( $results['error'] ) ) {
 					$image->setAttribute( 'src', $result['url'] );
 				} else {
