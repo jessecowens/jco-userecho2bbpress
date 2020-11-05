@@ -29,18 +29,19 @@
 	 * practising this, we should strive to set a better example in our own work.
 	 */
 	 $( document ).ready( function( $ ) {
-		 $( '#jco_userecho2bbpress_final' ).submit( function( event ) {
+		 $( '#jco_userecho2bbpress_final' ).submit( async function( event ) {
 			 event.preventDefault();
 
 			 var category_map = JSON.parse( $( '[name="jco[category_map]"]' ).val() );
 			 var topics = JSON.parse( $( '[name="jco[topics]"]' ).val() );
 			 var numtopics = $( '[name="jco[numtopics]"]' ).val();
-			 var i = 1;
-			 //console.log( numtopics );
-			 topics.forEach(insertTopic);
+			 var i;
+			 for ( i=0; i < topics.length; i++ ){
+				 await insertTopic( topics[i], i );
+			 }
 			 //insertTopic(topics[0]);
 
-			 async function insertTopic(topic){
+			 async function insertTopic(topic, i){
 			 	var postdata = {
 				 	'action': 'jco_insert_topic',
 				 	'category_map': JSON.stringify( category_map ),
@@ -55,12 +56,9 @@
 				 	function( response ) {
 					 $('#ajax-status').prepend( response );
 				 });
-				 await sleep(5000);
-				 i++;
+				 await new Promise(r => setTimeout(r, 5000));
 			 }
-			 function sleep(ms) {
-				 return new Promise( resolve => setTimeout( resolve, ms ) );
-			 }
+
 
 	});
 });
