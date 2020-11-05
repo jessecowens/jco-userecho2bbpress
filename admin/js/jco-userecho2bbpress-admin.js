@@ -40,7 +40,7 @@
 			 topics.forEach(insertTopic);
 			 //insertTopic(topics[0]);
 
-			 function insertTopic(topic){
+			 async function insertTopic(topic){
 			 	var postdata = {
 				 	'action': 'jco_insert_topic',
 				 	'category_map': JSON.stringify( category_map ),
@@ -55,9 +55,12 @@
 				 	function( response ) {
 					 $('#ajax-status').prepend( response );
 				 });
+				 await sleep(5000);
 				 i++;
 			 }
-
+			 function sleep(ms) {
+				 return new Promise( resolve => setTimeout( resolve, ms ) );
+			 }
 
 	});
 });

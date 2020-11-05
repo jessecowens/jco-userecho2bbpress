@@ -360,6 +360,10 @@ class Jco_Userecho2bbpress_Admin {
 
 		$this->delete_topic_if_exists($post_name);
 
+		if ( empty( $reply_count ) ) {
+			return false;
+		}
+
 		$topic_data = array(
 			'post_author' => 0,
 			'post_parent' => $forum_id, // forum ID
@@ -464,8 +468,8 @@ class Jco_Userecho2bbpress_Admin {
 
 	public function import_and_replace_media( $content, $ue_topic_id ){
 		$timeout = 5;
-		$doc = new DOMDocument;
-		$doc->loadHTML($content);
+		$doc = new \DOMDocument();
+		@$doc->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
 		$baseurl = $this->forum->get_base_url( $ue_topic_id );
 
 		$images = $doc->getElementsByTagName('img');
@@ -502,6 +506,10 @@ class Jco_Userecho2bbpress_Admin {
 			sleep( 2 );
 		}
 		$content = $doc->saveHTML();
+
+		$content = str_replace( '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><body>', '', $content );
+		$content = str_replace( '</body></html>', '', $content );
 		return $content;
 	}
 
